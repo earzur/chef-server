@@ -202,7 +202,9 @@ when "init"
   server_services.each do |svc|
     init_content = IO.read("#{gems_dir}/gems/chef-#{chef_version}/distro/#{dist_dir}/etc/init.d/#{svc}")
     conf_content = IO.read("#{gems_dir}/gems/chef-#{chef_version}/distro/#{dist_dir}/etc/#{conf_dir}/#{svc}")
-
+    if gems_dir =~ /rvm/  # rvm gem binaries aren't in the path
+      init_content.gsub!("/usr/bin/#{svc}","#{gems_dir}/bin/#{svc}").gsub!("\"#{svc}\"","\"#{gems_dir}/bin/#{svc}\"") 
+    end
     file "/etc/init.d/#{svc}" do
       content init_content
       mode 0755
@@ -214,7 +216,7 @@ when "init"
     end
 
     link "/usr/sbin/#{svc}" do
-      to "#{node['languages']['ruby']['bin_dir']}/#{svc}"
+      to (gems_dir =~ /rvm/)?"#{gems_dir}/bin/#{svc}":"#{node['languages']['ruby']['bin_dir']}/#{svc}"
     end
 
     service "#{svc}" do
